@@ -1,0 +1,37 @@
+# Run commitlint on the commit messages in a pull request.
+
+name: Lint Commit Messages
+
+on:
+  # This action is meant to be used from other actions.
+  # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+  - workflow_call
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+        with:
+          # Fetch 20 commits.  Should be enough?
+          fetch-depth: 20
+
+      - name: Check for a local configuration file
+        id: check
+        run: |
+          if [[ ! -f commitlint.config.js ]]; then
+            echo "::set-output name=need::yes"
+          fi
+      - name: Download configuration if needed
+        if: steps.check.outputs.need == 'yes'
+        uses: wei/wget@v1
+        with:
+          args: -O commitlint.config.js https://raw.githubusercontent.com/Dicey-Tech/.github/master/commitlint.config.js
+
+      - name: Run commitlint
+        uses: wagoid/commitlint-github-action@v4
